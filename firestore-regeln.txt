@@ -1,0 +1,13 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Only signed-in app instances, only the two collections of a list, only encrypted documents
+    match /l/{list}/{coll}/{id} {
+      allow read, delete: if request.auth != null && list.size() == 32 && coll in ['trips', 'items'];
+      allow create, update: if request.auth != null && list.size() == 32 && coll in ['trips', 'items']
+        && request.resource.data.keys().hasOnly(['c', 'iv', 'u'])
+        && request.resource.data.c is string && request.resource.data.c.size() < 20000
+        && request.resource.data.iv is string && request.resource.data.u is int;
+    }
+  }
+}

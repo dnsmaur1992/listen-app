@@ -1,0 +1,1266 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Liste</title>
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Liste" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="icon-180.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+<style>
+  /* iOS look: grouped lists, system font, light and dark like the system */
+  :root {
+    --bg: #f2f2f7;
+    --card: #ffffff;
+    --text: #000000;
+    --sub: #8e8e93;
+    --sep: #c6c6c8;
+    --fill: #e5e5ea;
+    --acc: #e9a21b;
+    --acc-ink: #ffffff;
+    --red: #ff3b30;
+    --green: #34c759;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000000;
+      --card: #1c1c1e;
+      --text: #ffffff;
+      --sub: #8e8e93;
+      --sep: #38383a;
+      --fill: #2c2c2e;
+      --acc: #f5b33f;
+      --acc-ink: #1c1c1e;
+      --red: #ff453a;
+      --green: #30d158;
+    }
+  }
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+  html,
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 17px/1.3 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  [hidden] {
+    display: none !important;
+  }
+  button,
+  input {
+    font: inherit;
+    color: inherit;
+  }
+  button {
+    cursor: pointer;
+  }
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: calc(10px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px))
+      calc(40px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  }
+  /* navigation bar */
+  .nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 44px;
+    gap: 8px;
+  }
+  .nav button {
+    background: none;
+    border: 0;
+    color: var(--acc);
+    font-size: 17px;
+    padding: 8px 4px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .nav > span:not(.live) {
+    display: flex;
+  }
+  .nav .ic {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    justify-content: center;
+    font-size: 22px;
+  }
+  h1 {
+    font-size: 34px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    margin: 2px 0 12px;
+  }
+  .sub {
+    color: var(--sub);
+    font-size: 15px;
+  }
+  .sech {
+    color: var(--sub);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin: 22px 16px 6px;
+  }
+  .group {
+    background: var(--card);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  /* trips */
+  .trip {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: 0;
+    padding: 12px 16px;
+    position: relative;
+  }
+  .trip + .trip::before,
+  .row + .row::before,
+  .setrow + .setrow::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 16px;
+    right: 0;
+    border-top: 0.5px solid var(--sep);
+  }
+  .trip .cal {
+    width: 44px;
+    flex: none;
+    text-align: center;
+    border-radius: 10px;
+    background: var(--fill);
+    padding: 4px 0 5px;
+  }
+  .trip .cal small {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--red);
+    text-transform: uppercase;
+  }
+  .trip .cal b {
+    font-size: 21px;
+    font-weight: 600;
+  }
+  .trip .t {
+    flex: 1;
+    min-width: 0;
+  }
+  .trip .t b {
+    display: block;
+    font-weight: 600;
+  }
+  .trip .chev {
+    color: var(--sub);
+    font-size: 20px;
+  }
+  .prog {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--fill);
+    margin-top: 6px;
+    overflow: hidden;
+  }
+  .prog i {
+    display: block;
+    height: 100%;
+    background: var(--acc);
+  }
+  .empty {
+    text-align: center;
+    color: var(--sub);
+    padding: 40px 16px;
+  }
+  /* list table */
+  .search {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--fill);
+    border-radius: 10px;
+    padding: 0 10px;
+    margin-bottom: 14px;
+  }
+  .search input {
+    flex: 1;
+    border: 0;
+    background: none;
+    padding: 8px 0;
+    outline: none;
+    min-width: 0;
+  }
+  .search span {
+    color: var(--sub);
+  }
+  .thead,
+  .row {
+    display: grid;
+    grid-template-columns: 34px 48px 86px 1fr 30px;
+    align-items: center;
+    column-gap: 6px;
+    padding: 0 8px 0 12px;
+  }
+  .thead {
+    font-size: 12px;
+    color: var(--sub);
+    text-transform: uppercase;
+    padding-bottom: 6px;
+  }
+  .row {
+    position: relative;
+    min-height: 46px;
+  }
+  .row input {
+    border: 0;
+    background: none;
+    outline: none;
+    padding: 12px 0;
+    width: 100%;
+    min-width: 0;
+  }
+  .row input.n {
+    text-align: center;
+    border-radius: 8px;
+  }
+  .row input:focus {
+    background: var(--fill);
+    border-radius: 8px;
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+  .row input.n:focus {
+    padding: 12px 0;
+  }
+  .row input::placeholder {
+    color: var(--sub);
+    opacity: 0.6;
+  }
+  .row.done input {
+    color: var(--sub);
+  }
+  .row.done input.p {
+    text-decoration: line-through;
+  }
+  .chk {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid var(--sep);
+    background: none;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .chk svg {
+    width: 14px;
+    height: 14px;
+    opacity: 0;
+  }
+  .row.done .chk {
+    background: var(--acc);
+    border-color: var(--acc);
+  }
+  .row.done .chk svg {
+    opacity: 1;
+  }
+  .row .del {
+    border: 0;
+    background: none;
+    color: var(--red);
+    font-size: 18px;
+    padding: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .row:focus-within .del {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .row.new .chk {
+    border-style: dashed;
+  }
+  .sugg {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 4px 12px 10px 52px;
+  }
+  .sugg button {
+    border: 0;
+    background: var(--fill);
+    border-radius: 14px;
+    padding: 5px 11px;
+    font-size: 15px;
+  }
+  .sugg button small {
+    color: var(--sub);
+    margin-left: 4px;
+  }
+  .live {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    color: var(--sub);
+  }
+  .live i {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--sub);
+  }
+  .live.on i {
+    background: var(--green);
+  }
+  .bar {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .btn {
+    flex: 1;
+    border: 0;
+    border-radius: 12px;
+    padding: 13px 16px;
+    background: var(--acc);
+    color: var(--acc-ink);
+    font-weight: 600;
+  }
+  .btn.sec {
+    background: var(--card);
+    color: var(--acc);
+  }
+  .btn.danger {
+    background: var(--card);
+    color: var(--red);
+  }
+  .btn:disabled {
+    opacity: 0.4;
+  }
+  /* lock screen */
+  .lock {
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 14px;
+    text-align: center;
+  }
+  .lock img {
+    width: 84px;
+    height: 84px;
+    border-radius: 19px;
+    align-self: center;
+  }
+  .field {
+    background: var(--card);
+    border: 0;
+    border-radius: 12px;
+    padding: 14px 16px;
+    width: 100%;
+    outline: none;
+  }
+  .msg {
+    color: var(--red);
+    font-size: 15px;
+    min-height: 20px;
+  }
+  .note {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 15px;
+    color: var(--sub);
+    text-align: left;
+    line-height: 1.45;
+  }
+  .note b {
+    color: var(--text);
+  }
+  /* sheets */
+  .sheetbg {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 20;
+  }
+  .sheet {
+    width: 100%;
+    max-width: 640px;
+    background: var(--bg);
+    border-radius: 14px 14px 0 0;
+    padding: 18px max(16px, env(safe-area-inset-right, 0px)) calc(18px + env(safe-area-inset-bottom, 0px))
+      max(16px, env(safe-area-inset-left, 0px));
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .sheet h3 {
+    margin: 0;
+    font-size: 20px;
+  }
+  .setrow {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    background: none;
+    border: 0;
+    text-align: left;
+    padding: 13px 16px;
+  }
+  .setrow.red {
+    color: var(--red);
+  }
+  .setrow.acc {
+    color: var(--acc);
+  }
+  .tog {
+    width: 51px;
+    height: 31px;
+    border-radius: 16px;
+    background: var(--fill);
+    position: relative;
+    flex: none;
+    transition: background 0.2s;
+  }
+  .tog::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 27px;
+    height: 27px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+    transition: transform 0.2s;
+  }
+  .tog.on {
+    background: var(--green);
+  }
+  .tog.on::after {
+    transform: translateX(20px);
+  }
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
+    background: rgba(60, 60, 67, 0.92);
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 18px;
+    font-size: 15px;
+    z-index: 30;
+    max-width: 90vw;
+  }
+  label.chkline {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    font-size: 15px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      transition: none !important;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="sheetbg" id="sheet" hidden></div>
+<div class="toast" id="toast" hidden></div>
+<script src="config.js"></script>
+<script type="module">
+  /*
+   * Liste – shared shopping list.
+   * Every entry is encrypted on the phone (AES-GCM) with a key derived from the list password; the password also
+   * derives the secret list address. Firebase only stores and syncs ciphertext. Face ID unlocks the password
+   * stored on this device via a passkey (WebAuthn PRF).
+   */
+  const MOCK = new URLSearchParams(location.search).has("mock");
+  const LS = { pw: "liste.pw", fid: "liste.fid", known: "liste.known", hide: "liste.hideDone" };
+  const enc = new TextEncoder(),
+    dec = new TextDecoder();
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) =>
+    String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  const ls = {
+    get(k) {
+      try {
+        return localStorage.getItem(k);
+      } catch (e) {
+        return null;
+      }
+    },
+    set(k, v) {
+      try {
+        v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v);
+      } catch (e) {}
+    },
+  };
+  const b64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)));
+  const unb64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+  const rid = () => b64(crypto.getRandomValues(new Uint8Array(12))).replace(/[+/=]/g, (c) => ({ "+": "-", "/": "_", "=": "" })[c]);
+
+  /* ============ Crypto ============ */
+  async function derive(pw) {
+    const base = await crypto.subtle.importKey("raw", enc.encode(pw.normalize("NFC")), "PBKDF2", false, [
+      "deriveBits",
+      "deriveKey",
+    ]);
+    const p = (salt) => ({ name: "PBKDF2", hash: "SHA-256", salt: enc.encode(salt), iterations: 250000 });
+    const idBits = await crypto.subtle.deriveBits(p("liste/id/v1"), base, 128),
+      key = await crypto.subtle.deriveKey(p("liste/key/v1"), base, { name: "AES-GCM", length: 256 }, false, [
+        "encrypt",
+        "decrypt",
+      ]);
+    return { id: [...new Uint8Array(idBits)].map((b) => b.toString(16).padStart(2, "0")).join(""), key };
+  }
+  async function seal(key, obj) {
+    const iv = crypto.getRandomValues(new Uint8Array(12)),
+      c = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, enc.encode(JSON.stringify(obj)));
+    return { c: b64(c), iv: b64(iv), u: Date.now() };
+  }
+  async function open(key, d) {
+    const p = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(d.iv) }, key, unb64(d.c));
+    return JSON.parse(dec.decode(p));
+  }
+
+  /* ============ Face ID / Touch ID (passkey with PRF) ============ */
+  const FID_SALT = enc.encode("liste/faceid/v1");
+  const fidStored = () => {
+    try {
+      return JSON.parse(ls.get(LS.fid) || "null");
+    } catch (e) {
+      return null;
+    }
+  };
+  const canFid = () => !!(window.PublicKeyCredential && navigator.credentials);
+  async function fidAssert(cid) {
+    const cred = await navigator.credentials.get({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        allowCredentials: [{ type: "public-key", id: unb64(cid) }],
+        userVerification: "required",
+        timeout: 60000,
+        extensions: { prf: { eval: { first: FID_SALT } } },
+      },
+    });
+    const r = cred.getClientExtensionResults ? cred.getClientExtensionResults() : {};
+    return r.prf && r.prf.results && r.prf.results.first ? new Uint8Array(r.prf.results.first) : null;
+  }
+  async function prfKey(bytes) {
+    return crypto.subtle.importKey("raw", bytes, "AES-GCM", false, ["encrypt", "decrypt"]);
+  }
+  /* Registers a passkey for this device and stores the password sealed with its PRF secret.
+     Without PRF support the password stays on the device and Face ID only guards the app ("gate"). */
+  async function fidSetup(pw) {
+    const cred = await navigator.credentials.create({
+      publicKey: {
+        rp: { name: "Liste", id: location.hostname },
+        user: { id: crypto.getRandomValues(new Uint8Array(16)), name: "Liste", displayName: "Liste" },
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        pubKeyCredParams: [
+          { type: "public-key", alg: -7 },
+          { type: "public-key", alg: -257 },
+        ],
+        authenticatorSelection: { authenticatorAttachment: "platform", residentKey: "preferred", userVerification: "required" },
+        timeout: 60000,
+        extensions: { prf: { eval: { first: FID_SALT } } },
+      },
+    });
+    const cid = b64(cred.rawId);
+    let secret = null;
+    const r = cred.getClientExtensionResults ? cred.getClientExtensionResults() : {};
+    if (r.prf && r.prf.results && r.prf.results.first) secret = new Uint8Array(r.prf.results.first);
+    else if (r.prf && r.prf.enabled !== false) secret = await fidAssert(cid).catch(() => null);
+    if (secret) {
+      const k = await prfKey(secret),
+        iv = crypto.getRandomValues(new Uint8Array(12)),
+        ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, k, enc.encode(pw));
+      ls.set(LS.fid, JSON.stringify({ cid, mode: "prf", iv: b64(iv), ct: b64(ct) }));
+      ls.set(LS.pw, null);
+      return "prf";
+    }
+    ls.set(LS.fid, JSON.stringify({ cid, mode: "gate" }));
+    ls.set(LS.pw, pw);
+    return "gate";
+  }
+  async function fidUnlock() {
+    const f = fidStored();
+    if (!f) return null;
+    const secret = await fidAssert(f.cid);
+    if (f.mode === "prf") {
+      if (!secret) throw new Error("prf");
+      const k = await prfKey(secret);
+      return dec.decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(f.iv) }, k, unb64(f.ct)));
+    }
+    return ls.get(LS.pw);
+  }
+
+  /* ============ Sync backends: Firebase, or a local mock for tests (?mock) ============ */
+  async function firebaseBackend() {
+    const F = await import("./firebase.js");
+    const app = F.initializeApp(window.firebaseConfig || (typeof firebaseConfig !== "undefined" ? firebaseConfig : null));
+    const db = F.initializeFirestore(app, { localCache: F.persistentLocalCache({ tabManager: F.persistentMultipleTabManager() }) });
+    const auth = F.getAuth(app);
+    await new Promise((res, rej) => {
+      const off = F.onAuthStateChanged(auth, (u) => {
+        if (u) {
+          off();
+          res();
+        }
+      });
+      F.signInAnonymously(auth).catch((e) => (navigator.onLine ? rej(e) : res()));
+    });
+    return {
+      watch(list, coll, cb) {
+        return F.onSnapshot(
+          F.collection(db, "l", list, coll),
+          { includeMetadataChanges: true },
+          (s) => cb(s.docs.map((d) => ({ id: d.id, ...d.data() })), s.metadata.fromCache, s.metadata.hasPendingWrites),
+          () => cb(null, true),
+        );
+      },
+      put: (list, coll, id, d) => F.setDoc(F.doc(db, "l", list, coll, id), d),
+      del: (list, coll, id) => F.deleteDoc(F.doc(db, "l", list, coll, id)),
+    };
+  }
+  function mockBackend() {
+    const bc = new BroadcastChannel("liste-mock"),
+      subs = new Set(),
+      read = () => JSON.parse(localStorage.getItem("liste.mockdb") || "{}"),
+      emit = () => subs.forEach((f) => f());
+    bc.onmessage = emit;
+    const write = (fn) => {
+      const d = read();
+      fn(d);
+      localStorage.setItem("liste.mockdb", JSON.stringify(d));
+      emit();
+      bc.postMessage(1);
+      return Promise.resolve();
+    };
+    return {
+      watch(list, coll, cb) {
+        const f = () => {
+          const m = read()[`${list}/${coll}`] || {};
+          cb(Object.entries(m).map(([id, v]) => ({ id, ...v })), false, false);
+        };
+        subs.add(f);
+        setTimeout(f, 30);
+        return () => subs.delete(f);
+      },
+      put: (list, coll, id, v) => write((d) => ((d[`${list}/${coll}`] = d[`${list}/${coll}`] || {})[id] = v)),
+      del: (list, coll, id) => write((d) => delete (d[`${list}/${coll}`] || {})[id]),
+    };
+  }
+
+  /* ============ State ============ */
+  const S = {
+    view: "lock", // lock | trips | trip
+    key: null,
+    list: null,
+    trips: {}, // id -> {date, title, done, created}
+    items: {}, // id -> {trip, name, qty, amt, chk, ts}
+    cache: {}, // id -> iv of the decrypted version
+    tripId: null,
+    q: "",
+    online: false,
+    loaded: { trips: false, items: false },
+    pending: false,
+    showDone: ls.get(LS.hide) !== "1",
+  };
+  let backend = null,
+    unsub = [];
+
+  async function connect(pw, opts = {}) {
+    const d = await derive(pw);
+    if (!backend) backend = MOCK ? mockBackend() : await firebaseBackend();
+    S.key = d.key;
+    S.list = d.id;
+    S.trips = {};
+    S.items = {};
+    S.cache = {};
+    S.loaded = { trips: false, items: false };
+    unsub.forEach((f) => f());
+    const known = (ls.get(LS.known) || "").split(",");
+    let firstServer = null;
+    const ready = new Promise((r) => (firstServer = r));
+    const handle = (coll) => async (docs, fromCache) => {
+      if (!docs) return;
+      const store = coll === "trips" ? S.trips : S.items,
+        seen = new Set();
+      for (const d of docs) {
+        seen.add(d.id);
+        if (S.cache[d.id] === d.iv) continue;
+        try {
+          store[d.id] = await open(S.key, d);
+          S.cache[d.id] = d.iv;
+        } catch (e) {
+          // a document this key can't open: wrong list or damaged, ignore
+        }
+      }
+      Object.keys(store).forEach((id) => !seen.has(id) && (delete store[id], delete S.cache[id]));
+      S.online = !fromCache;
+      S.loaded[coll] = true;
+      if (coll === "trips" && (!fromCache || !navigator.onLine)) firstServer({ empty: docs.length === 0 });
+      if (S.view !== "lock") schedule();
+    };
+    unsub = [backend.watch(S.list, "trips", handle("trips")), backend.watch(S.list, "items", handle("items"))];
+    const r = await Promise.race([ready, new Promise((res) => setTimeout(() => res({ empty: null }), 8000))]);
+    // a typo in the password would silently open a new, empty list – ask before creating one
+    if (r.empty && !known.includes(S.list) && !opts.create) return "new";
+    if (!known.includes(S.list)) ls.set(LS.known, [...known.filter(Boolean), S.list].join(","));
+    return "ok";
+  }
+  const put = async (coll, id, obj) => {
+    (coll === "trips" ? S.trips : S.items)[id] = obj;
+    const d = await seal(S.key, obj);
+    S.cache[id] = d.iv;
+    return backend.put(S.list, coll, id, d);
+  };
+  const del = (coll, id) => {
+    delete (coll === "trips" ? S.trips : S.items)[id];
+    return backend.del(S.list, coll, id);
+  };
+
+  /* ============ Helpers ============ */
+  const today = () => new Date().toISOString().slice(0, 10);
+  const parseD = (s) => new Date(s + "T12:00:00");
+  function dayLabel(ds) {
+    const d = parseD(ds),
+      t = parseD(today()),
+      diff = Math.round((d - t) / 864e5),
+      base = d.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
+    return diff === 0 ? "Heute" : diff === 1 ? "Morgen" : diff === -1 ? "Gestern" : base;
+  }
+  const cmpName = (a, b) => {
+    if (!a.name) return 1;
+    if (!b.name) return -1;
+    return a.name.localeCompare(b.name, "de", { sensitivity: "base", numeric: true });
+  };
+  const tripItems = (tid) =>
+    Object.entries(S.items)
+      .filter(([, x]) => x.trip === tid)
+      .map(([id, x]) => ({ id, ...x }));
+  function sorted(tid) {
+    const all = tripItems(tid);
+    return [...all.filter((x) => !x.chk).sort(cmpName), ...all.filter((x) => x.chk).sort(cmpName)];
+  }
+  /* earlier products, most frequent first, with their last count and amount */
+  function history() {
+    const m = new Map();
+    Object.values(S.items)
+      .filter((x) => x.name)
+      .sort((a, b) => (a.ts || 0) - (b.ts || 0))
+      .forEach((x) => {
+        const k = x.name.trim().toLowerCase(),
+          o = m.get(k) || { name: x.name.trim(), n: 0 };
+        o.n++;
+        o.qty = x.qty;
+        o.amt = x.amt;
+        m.set(k, o);
+      });
+    return [...m.values()].sort((a, b) => b.n - a.n);
+  }
+  function toast(t) {
+    const el = $("toast");
+    el.textContent = t;
+    el.hidden = false;
+    clearTimeout(toast.t);
+    toast.t = setTimeout(() => (el.hidden = true), 2400);
+  }
+  /* live updates never overwrite a row someone is typing in: re-render once the row is left */
+  function schedule() {
+    if (S.view === "trip" && $("rows")) syncRows();
+    else render();
+  }
+  const CHECK = `<svg viewBox="0 0 14 14"><path d="M2.5 7.4l3 3 6-6.6" fill="none" stroke="var(--acc-ink)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+  /* ============ Views ============ */
+  function render() {
+    const el = $("app");
+    if (S.view === "lock") return renderLock(el);
+    if (S.view === "trip" && S.trips[S.tripId]) return renderTrip(el);
+    S.view = "trips";
+    renderTrips(el);
+  }
+  function configured() {
+    const c = window.firebaseConfig || (typeof firebaseConfig !== "undefined" ? firebaseConfig : null);
+    return MOCK || !!(c && c.apiKey && c.projectId);
+  }
+  function renderLock(el, msg = "") {
+    if (!configured()) {
+      el.innerHTML = `<div class="lock"><img src="icon-180.png" alt=""><h1>Liste</h1><div class="note"><b>Noch nicht eingerichtet.</b><br>In der Datei <b>config.js</b> fehlen die Firebase-Zugangsdaten. Trag sie dort ein, wie in der Anleitung beschrieben, und lade die Seite neu.</div></div>`;
+      return;
+    }
+    const f = fidStored();
+    el.innerHTML = `<div class="lock"><img src="icon-180.png" alt=""><h1 style="margin:0">Liste</h1><div class="sub">Gib das Passwort eurer Liste ein.</div>
+      <form id="lockForm" autocomplete="on"><input class="field" id="pw" type="password" autocomplete="current-password" placeholder="Passwort" enterkeyhint="go"></form>
+      <div class="msg" id="lockMsg">${esc(msg)}</div>
+      <button class="btn" id="unlock" type="button">Öffnen</button>
+      ${f ? `<button class="btn sec" id="fidBtn" type="button">Mit Face ID / Touch ID öffnen</button>` : ""}
+      <div class="sub" style="font-size:13px">Die Einträge werden auf dem Gerät verschlüsselt. Ohne Passwort kann niemand sie lesen, auch nicht der Speicherdienst.</div></div>`;
+  }
+  function renderTrips(el) {
+    const all = Object.entries(S.trips).map(([id, x]) => ({ id, ...x })),
+      td = today(),
+      open = all.filter((x) => !x.done).sort((a, b) => a.date.localeCompare(b.date) || (a.created || 0) - (b.created || 0)),
+      done = all.filter((x) => x.done).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 15);
+    const card = (x) => {
+      const its = tripItems(x.id),
+        ok = its.filter((i) => i.chk).length,
+        d = parseD(x.date);
+      return `<button class="trip" data-open="${x.id}"><span class="cal"><small>${d.toLocaleDateString("de-DE", { weekday: "short" }).replace(".", "")}</small><b>${d.getDate()}</b></span><span class="t"><b>${esc(dayLabel(x.date))}${x.title ? ` · ${esc(x.title)}` : ""}</b><span class="sub">${its.length ? `${ok} von ${its.length} erledigt` : "Noch leer"}${!x.done && x.date < td ? " · überfällig" : ""}</span>${its.length ? `<div class="prog"><i style="width:${Math.round((100 * ok) / its.length)}%"></i></div>` : ""}</span><span class="chev">›</span></button>`;
+    };
+    el.innerHTML = `<div class="nav"><span class="live ${S.online ? "on" : ""}"><i></i>${S.online ? "Synchron" : "Offline"}</span><span><button class="ic" data-act="settings" aria-label="Einstellungen">⚙︎</button><button class="ic" data-act="newtrip" aria-label="Neuer Einkauf">＋</button></span></div>
+      <h1>Einkäufe</h1>
+      ${open.length ? `<div class="group">${open.map(card).join("")}</div>` : `<div class="empty">Noch kein Einkauf geplant.<br><br><button class="btn" data-act="newtrip" style="max-width:260px">Neuer Einkauf</button></div>`}
+      ${done.length ? `<div class="sech">Erledigt</div><div class="group">${done.map(card).join("")}</div>` : ""}`;
+  }
+  function rowHtml(x) {
+    return `<div class="row${x.chk ? " done" : ""}" data-id="${x.id}"><button class="chk" data-chk="${x.id}" aria-label="${x.chk ? "Abhaken rückgängig" : "Abhaken"}">${CHECK}</button><input class="n" inputmode="numeric" pattern="[0-9]*" data-f="qty" value="${esc(x.qty ?? "")}" placeholder="–" aria-label="Anzahl"><input data-f="amt" value="${esc(x.amt || "")}" aria-label="Menge"><input class="p" data-f="name" value="${esc(x.name || "")}" placeholder="Produkt" aria-label="Produkt" enterkeyhint="next"><button class="del" data-delrow="${x.id}" aria-label="Löschen" tabindex="-1">⊖</button></div>`;
+  }
+  const NEWROW = `<div class="row new" data-id="new"><button class="chk" tabindex="-1" aria-hidden="true" disabled></button><input class="n" inputmode="numeric" pattern="[0-9]*" data-f="qty" placeholder="–" aria-label="Anzahl"><input data-f="amt" placeholder="Menge" aria-label="Menge"><input class="p" data-f="name" placeholder="Neuer Artikel" aria-label="Neuer Artikel" enterkeyhint="next"><span></span></div>`;
+  function tripState() {
+    const t = S.trips[S.tripId],
+      q = S.q.trim().toLowerCase();
+    let rows = sorted(S.tripId);
+    const total = rows.length,
+      ok = rows.filter((x) => x.chk).length;
+    if (!S.showDone) rows = rows.filter((x) => !x.chk);
+    if (q) rows = rows.filter((x) => (x.name || "").toLowerCase().includes(q) || (x.amt || "").toLowerCase().includes(q));
+    return { t, q, rows, total, ok, sub: `${t.title ? t.title + " · " : ""}${parseD(t.date).toLocaleDateString("de-DE")} · ${ok} von ${total} erledigt` };
+  }
+  /* Updates the rows in place: the row someone is typing in is never replaced or moved (keeps the keyboard open),
+     the others are re-sorted around it */
+  function syncRows() {
+    const box = $("rows");
+    if (S.view !== "trip" || !box || !S.trips[S.tripId]) return render();
+    const st = tripState(),
+      a = document.activeElement,
+      keep = a && a.closest ? a.closest("#rows > .row") : null,
+      want = st.rows.map((x) => x.id),
+      tmp = document.createElement("div");
+    if (!st.q) want.push("new");
+    const els = want.map((id) => {
+      const cur = box.querySelector(`:scope > .row[data-id="${id}"]`);
+      if (cur && cur === keep) return cur;
+      tmp.innerHTML = id === "new" ? NEWROW : rowHtml({ id, ...S.items[id] });
+      return tmp.firstElementChild;
+    });
+    box.querySelectorAll(":scope > .row").forEach((r) => !els.includes(r) && r !== keep && r.remove());
+    const sugg = $("sugg"),
+      k = keep ? els.indexOf(keep) : -1;
+    if (k < 0) els.forEach((e) => box.insertBefore(e, sugg));
+    else {
+      for (let i = 0; i < k; i++) box.insertBefore(els[i], keep);
+      const ref = keep.nextSibling;
+      for (let i = k + 1; i < els.length; i++) box.insertBefore(els[i], ref);
+    }
+    if (sugg && sugg !== box.lastElementChild) box.appendChild(sugg);
+    const sub = $("tsub");
+    if (sub) sub.textContent = st.sub;
+  }
+  function renderTrip(el) {
+    const { t, q, rows, total, ok, sub } = tripState();
+    el.innerHTML = `<div class="nav"><button data-act="back">‹ Einkäufe</button><span class="live ${S.online ? "on" : ""}"><i></i>${S.online ? "Synchron" : "Offline"}</span><button class="ic" data-act="tripmenu" aria-label="Mehr">⋯</button></div>
+      <h1 style="margin-bottom:2px">${esc(dayLabel(t.date))}</h1><div class="sub" id="tsub" style="margin-bottom:14px">${esc(sub)}</div>
+      <div class="search"><span>⌕</span><input id="q" type="search" placeholder="Suchen" value="${esc(S.q)}" autocomplete="off"></div>
+      <div class="thead"><span></span><span style="text-align:center">Anz.</span><span>Menge</span><span>Produkt</span><span></span></div>
+      <div class="group" id="rows">${rows.map(rowHtml).join("")}${q ? "" : NEWROW + `<div id="sugg" class="sugg" hidden></div>`}</div>
+      ${!rows.length && q ? `<div class="empty">Nichts gefunden.</div>` : ""}
+      ${!S.showDone && ok ? `<div class="sub" style="text-align:center;margin-top:12px">${ok} erledigte ausgeblendet</div>` : ""}`;
+  }
+
+  /* ============ Editing ============ */
+  function rowValues(row) {
+    const v = {};
+    row.querySelectorAll("input[data-f]").forEach((i) => (v[i.dataset.f] = i.value.trim()));
+    v.qty = v.qty === "" ? "" : String(Math.max(0, Math.min(999, parseInt(v.qty) || 0)) || "");
+    return v;
+  }
+  /* commits a row when it is left: new rows are created, emptied rows deleted, then the list re-sorts */
+  async function commitRow(row) {
+    if (!row || !row.isConnected) return;
+    const id = row.dataset.id,
+      v = rowValues(row);
+    if (id === "new") {
+      if (!v.name) return;
+      const nid = rid();
+      await put("items", nid, { trip: S.tripId, name: v.name, qty: v.qty, amt: v.amt, chk: false, ts: Date.now() });
+      return nid;
+    }
+    const x = S.items[id];
+    if (!x) return;
+    if (!v.name) return del("items", id);
+    if (x.name !== v.name || (x.qty ?? "") !== v.qty || (x.amt || "") !== v.amt)
+      await put("items", id, { ...x, name: v.name, qty: v.qty, amt: v.amt, ts: Date.now() });
+  }
+  /* the new row stays in place (keyboard stays open): its values become an item, the inputs are cleared */
+  async function commitNew(row) {
+    const v = rowValues(row);
+    if (!v.name) return;
+    row.querySelectorAll("input[data-f]").forEach((i) => (i.value = ""));
+    await put("items", rid(), { trip: S.tripId, name: v.name, qty: v.qty, amt: v.amt, chk: false, ts: Date.now() });
+    syncRows();
+  }
+  function showSugg(input) {
+    const box = $("sugg"),
+      row = input.closest(".row");
+    if (!box || !row || row.dataset.id !== "new") return box && (box.hidden = true);
+    const q = input.value.trim().toLowerCase(),
+      inTrip = new Set(tripItems(S.tripId).map((x) => (x.name || "").toLowerCase()));
+    if (!q) return (box.hidden = true);
+    const h = history().filter((x) => !inTrip.has(x.name.toLowerCase()) && x.name.toLowerCase() !== q),
+      hits = [...h.filter((x) => x.name.toLowerCase().startsWith(q)), ...h.filter((x) => !x.name.toLowerCase().startsWith(q) && x.name.toLowerCase().includes(q))].slice(0, 5);
+    box.innerHTML = hits
+      .map((x, i) => `<button type="button" data-sug="${i}">${esc(x.name)}${x.qty || x.amt ? `<small>${esc([x.qty, x.amt].filter(Boolean).join(" × "))}</small>` : ""}</button>`)
+      .join("");
+    box.hidden = !hits.length;
+    box._hits = hits;
+  }
+
+  /* ============ Sheets ============ */
+  function sheet(html) {
+    const el = $("sheet");
+    el.innerHTML = `<div class="sheet" role="dialog" aria-modal="true">${html}</div>`;
+    el.hidden = false;
+  }
+  const closeSheet = () => (($("sheet").hidden = true), ($("sheet").innerHTML = ""));
+  function newTripSheet(edit) {
+    const t = edit ? S.trips[S.tripId] : null,
+      last = Object.entries(S.trips)
+        .filter(([, x]) => !x.done)
+        .sort((a, b) => b[1].date.localeCompare(a[1].date))[0],
+      carry = !edit && last ? tripItems(last[0]).filter((x) => !x.chk && x.name).length : 0;
+    sheet(`<h3>${edit ? "Einkauf bearbeiten" : "Neuer Einkauf"}</h3>
+      <label class="sub" for="tDate">Wann?</label><input class="field" id="tDate" type="date" value="${t ? t.date : today()}">
+      <label class="sub" for="tTitle">Wo? (optional)</label><input class="field" id="tTitle" placeholder="z. B. Rewe, Markt, Drogerie" value="${esc(t ? t.title || "" : "")}">
+      ${carry ? `<label class="chkline"><input type="checkbox" id="tCarry" checked> ${carry} offene Artikel aus „${esc(dayLabel(last[1].date))}“ übernehmen</label>` : ""}
+      <div class="bar"><button class="btn sec" data-act="close">Abbrechen</button><button class="btn" data-act="${edit ? "savetrip" : "createtrip"}" data-from="${carry ? last[0] : ""}">${edit ? "Sichern" : "Anlegen"}</button></div>`);
+  }
+  function tripMenu() {
+    const t = S.trips[S.tripId];
+    sheet(`<div class="group">
+      <button class="setrow" data-act="edittrip">Datum und Ort ändern <span class="sub">›</span></button>
+      <button class="setrow" data-act="toggledone">${S.showDone ? "Erledigte ausblenden" : "Erledigte einblenden"}</button>
+      <button class="setrow" data-act="cleardone">Erledigte löschen</button>
+      <button class="setrow acc" data-act="finish">${t.done ? "Wieder öffnen" : "Einkauf abschließen"}</button>
+      <button class="setrow red" data-act="deltrip">Einkauf löschen</button></div>
+      <button class="btn sec" data-act="close">Schließen</button>`);
+  }
+  function settings() {
+    const f = fidStored();
+    sheet(`<h3>Einstellungen</h3><div class="group">
+      ${canFid() ? `<button class="setrow" data-act="fid">Mit Face ID / Touch ID entsperren <span class="tog ${f ? "on" : ""}"></span></button>` : ""}
+      <button class="setrow" data-act="lock">Jetzt sperren</button>
+      <button class="setrow red" data-act="forget">Passwort auf diesem Gerät vergessen</button></div>
+      ${f && f.mode === "gate" ? `<div class="note">Dieses Gerät unterstützt die stärkste Face-ID-Variante nicht. Face ID schützt hier den Zugang zur App, das Passwort liegt aber unverschlüsselt im App-Speicher.</div>` : ""}
+      <div class="note"><b>Wie sicher ist das?</b><br>Jeder Eintrag wird auf dem Gerät mit eurem Passwort verschlüsselt, bevor er gespeichert wird. Der Speicherdienst sieht nur Zeichensalat. Wer das Passwort nicht kennt, kann die Liste weder finden noch lesen. Ein vergessenes Passwort lässt sich nicht zurücksetzen.</div>
+      <button class="btn sec" data-act="close">Fertig</button>`);
+  }
+  function rememberSheet(pw) {
+    sheet(`<h3>Auf diesem Gerät merken?</h3><div class="sub">Dann musst du das Passwort hier nicht jedes Mal eingeben.</div>
+      ${canFid() ? `<button class="btn" data-act="rem-fid">Mit Face ID / Touch ID merken</button>` : ""}
+      <button class="btn sec" data-act="rem-plain">Ohne Face ID merken</button>
+      <button class="btn sec" data-act="rem-no">Nicht merken</button>`);
+    rememberSheet.pw = pw;
+  }
+
+  /* ============ Unlock flow ============ */
+  async function unlockWith(pw, opts = {}) {
+    if (!pw) return;
+    const msg = $("lockMsg");
+    if (msg) msg.textContent = "Wird geöffnet …";
+    let r;
+    try {
+      r = await connect(pw, opts);
+    } catch (e) {
+      if (msg) msg.textContent = "Keine Verbindung zum Speicherdienst. Prüfe die Einrichtung (config.js) und das Internet.";
+      return;
+    }
+    if (r === "new") {
+      sheet(`<h3>Neue Liste anlegen?</h3><div class="sub">Unter diesem Passwort gibt es noch keine Liste. Hast du dich vertippt, brich ab. Sonst wird mit diesem Passwort eine neue, leere Liste angelegt.</div>
+        <div class="bar"><button class="btn sec" data-act="close">Abbrechen</button><button class="btn" data-act="createlist">Anlegen</button></div>`);
+      unlockWith.pw = pw;
+      if (msg) msg.textContent = "";
+      return;
+    }
+    S.view = "trips";
+    render();
+    if (!opts.silent && !fidStored() && !ls.get(LS.pw)) rememberSheet(pw);
+  }
+  async function tryFid() {
+    try {
+      const pw = await fidUnlock();
+      if (pw) await unlockWith(pw, { silent: true });
+    } catch (e) {
+      const m = $("lockMsg");
+      if (m && e && e.name !== "NotAllowedError") m.textContent = "Face ID hat nicht geklappt. Gib das Passwort ein.";
+    }
+  }
+  function lock() {
+    unsub.forEach((f) => f());
+    unsub = [];
+    Object.assign(S, { view: "lock", key: null, list: null, trips: {}, items: {}, cache: {}, q: "" });
+    closeSheet();
+    render();
+  }
+
+  /* ============ Events ============ */
+  document.addEventListener("click", async (ev) => {
+    if (ev.target.id === "sheet") return closeSheet();
+    const b = ev.target.closest("button");
+    if (!b || b.disabled) return;
+    const d = b.dataset;
+    if (b.id === "unlock") return unlockWith($("pw").value);
+    if (b.id === "fidBtn") return tryFid();
+    if (d.open) {
+      S.tripId = d.open;
+      S.view = "trip";
+      S.q = "";
+      render();
+      return scrollTo(0, 0);
+    }
+    if (d.chk) {
+      const x = S.items[d.chk];
+      if (!x) return;
+      const row = b.closest(".row");
+      row.classList.toggle("done", !x.chk);
+      put("items", d.chk, { ...x, chk: !x.chk, ts: Date.now() });
+      // like Notes: the ticked row slides to the end after a moment
+      clearTimeout(S.chkT);
+      S.chkT = setTimeout(syncRows, 650);
+      return;
+    }
+    if (d.delrow) {
+      ev.preventDefault();
+      const row = b.closest(".row");
+      if (row) row.remove();
+      await del("items", d.delrow);
+      return syncRows();
+    }
+    if (d.sug != null) {
+      const x = $("sugg")._hits[+d.sug],
+        row = document.querySelector('.row[data-id="new"]');
+      if (!x || !row) return;
+      const f = (k) => row.querySelector(`[data-f="${k}"]`);
+      f("name").value = x.name;
+      if (!f("qty").value && x.qty) f("qty").value = x.qty;
+      if (!f("amt").value && x.amt) f("amt").value = x.amt;
+      await commitNew(row);
+      $("sugg").hidden = true;
+      return;
+    }
+    switch (d.act) {
+      case "back":
+        S.view = "trips";
+        return render();
+      case "newtrip":
+        return newTripSheet(false);
+      case "edittrip":
+        return newTripSheet(true);
+      case "close":
+        return closeSheet();
+      case "createtrip":
+      case "savetrip": {
+        const date = $("tDate").value || today(),
+          title = $("tTitle").value.trim();
+        if (d.act === "savetrip") {
+          await put("trips", S.tripId, { ...S.trips[S.tripId], date, title });
+        } else {
+          const id = rid();
+          await put("trips", id, { date, title, done: false, created: Date.now() });
+          // carry the open items of the previous trip over (they move, so nothing is doubled)
+          if (d.from && $("tCarry") && $("tCarry").checked)
+            for (const x of tripItems(d.from).filter((x) => !x.chk && x.name)) {
+              const { id: iid, ...rest } = x;
+              await put("items", iid, { ...rest, trip: id, ts: Date.now() });
+            }
+          S.tripId = id;
+          S.view = "trip";
+        }
+        closeSheet();
+        return render();
+      }
+      case "tripmenu":
+        return tripMenu();
+      case "toggledone":
+        S.showDone = !S.showDone;
+        ls.set(LS.hide, S.showDone ? null : "1");
+        closeSheet();
+        return render();
+      case "cleardone":
+        for (const x of tripItems(S.tripId).filter((x) => x.chk)) await del("items", x.id);
+        closeSheet();
+        return render();
+      case "finish": {
+        const t = S.trips[S.tripId];
+        await put("trips", S.tripId, { ...t, done: !t.done });
+        closeSheet();
+        if (!t.done) {
+          S.view = "trips";
+          toast("Einkauf abgeschlossen");
+        }
+        return render();
+      }
+      case "deltrip":
+        return sheet(`<h3>Einkauf löschen?</h3><div class="sub">Der Einkauf und alle ${tripItems(S.tripId).length} Artikel werden auf beiden Geräten gelöscht.</div><div class="bar"><button class="btn sec" data-act="close">Abbrechen</button><button class="btn danger" data-act="deltrip2">Löschen</button></div>`);
+      case "deltrip2":
+        for (const x of tripItems(S.tripId)) await del("items", x.id);
+        await del("trips", S.tripId);
+        S.view = "trips";
+        closeSheet();
+        return render();
+      case "settings":
+        return settings();
+      case "lock":
+        return lock();
+      case "forget":
+        ls.set(LS.pw, null);
+        ls.set(LS.fid, null);
+        toast("Passwort auf diesem Gerät gelöscht");
+        return lock();
+      case "fid": {
+        if (fidStored()) {
+          const pwKeep = ls.get(LS.pw);
+          ls.set(LS.fid, null);
+          if (!pwKeep) ls.set(LS.pw, null);
+          toast("Face ID ausgeschaltet");
+          return settings();
+        }
+        return sheet(`<h3>Face ID einrichten</h3><div class="sub">Gib zur Bestätigung das Listen-Passwort ein.</div><input class="field" id="fidPw" type="password" autocomplete="current-password" placeholder="Passwort"><div class="bar"><button class="btn sec" data-act="close">Abbrechen</button><button class="btn" data-act="fid2">Weiter</button></div>`);
+      }
+      case "fid2": {
+        const pw = $("fidPw").value,
+          dd = await derive(pw);
+        if (dd.id !== S.list) return toast("Das Passwort passt nicht zu dieser Liste");
+        return setupFid(pw);
+      }
+      case "rem-fid":
+        return setupFid(rememberSheet.pw);
+      case "rem-plain":
+        ls.set(LS.pw, rememberSheet.pw);
+        closeSheet();
+        return toast("Passwort gemerkt");
+      case "rem-no":
+        return closeSheet();
+      case "createlist":
+        closeSheet();
+        return unlockWith(unlockWith.pw, { create: true });
+    }
+  });
+  async function setupFid(pw) {
+    try {
+      const mode = await fidSetup(pw);
+      closeSheet();
+      toast(mode === "prf" ? "Face ID eingerichtet" : "Face ID eingerichtet (einfacher Schutz)");
+    } catch (e) {
+      toast(e && e.name === "NotAllowedError" ? "Abgebrochen" : "Face ID konnte nicht eingerichtet werden");
+    }
+  }
+  /* tapping a check circle, delete button or suggestion must not take the focus away from the row being edited */
+  document.addEventListener("pointerdown", (e) => {
+    if (e.target.closest && e.target.closest(".row .chk, .row .del, #sugg button")) e.preventDefault();
+  });
+  document.addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (e.target.id === "lockForm") unlockWith($("pw").value);
+  });
+  document.addEventListener("input", (e) => {
+    if (e.target.id === "q") {
+      S.q = e.target.value;
+      const pos = e.target.selectionStart;
+      render();
+      const q = $("q");
+      q.focus();
+      try {
+        q.setSelectionRange(pos, pos);
+      } catch (x) {}
+      return;
+    }
+    if (e.target.dataset && e.target.dataset.f === "name") showSugg(e.target);
+  });
+  /* leaving a row commits it; the list re-sorts alphabetically */
+  document.addEventListener("focusout", (e) => {
+    const row = e.target.closest && e.target.closest(".row");
+    if (!row) return;
+    setTimeout(async () => {
+      const a = document.activeElement;
+      if (a && row.contains(a)) return;
+      if (a && a.closest && a.closest("#sugg")) return;
+      if (row.dataset.id === "new") await commitNew(row);
+      else {
+        await commitRow(row);
+        syncRows();
+      }
+      const sg = $("sugg");
+      if (sg && !(a && a.closest && a.closest('.row[data-id="new"]'))) sg.hidden = true;
+    }, 0);
+  });
+  /* Enter in the new row saves it and keeps typing in a fresh new row; in other rows it jumps to the new row */
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" || !e.target.dataset || !e.target.dataset.f) return;
+    e.preventDefault();
+    const row = e.target.closest(".row");
+    if (row.dataset.id === "new") {
+      commitNew(row);
+      row.querySelector('[data-f="name"]').focus();
+    } else {
+      const n = document.querySelector('.row[data-id="new"] [data-f="name"]');
+      n ? n.focus() : e.target.blur();
+    }
+  });
+  /* lock again after 5 minutes in the background */
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) S.hiddenAt = Date.now();
+    else if (S.view !== "lock" && S.hiddenAt && Date.now() - S.hiddenAt > 5 * 60000 && fidStored()) {
+      lock();
+      tryFid();
+    }
+  });
+
+  /* ============ Start ============ */
+  render();
+  if (configured()) {
+    if (fidStored()) tryFid();
+    else if (ls.get(LS.pw)) unlockWith(ls.get(LS.pw), { silent: true });
+  }
+  if ("serviceWorker" in navigator && !MOCK) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+  window.__liste = { S, derive, seal, open, render, connect };
+</script>
+</body>
+</html>
